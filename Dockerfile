@@ -22,7 +22,6 @@ RUN --mount=type=cache,target=$UV_CACHE_DIR \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --frozen --no-install-project --no-dev
 
-
 ADD . /app
 
 RUN --mount=type=cache,target=$UV_CACHE_DIR \

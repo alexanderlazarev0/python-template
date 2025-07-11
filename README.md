@@ -18,7 +18,6 @@ or
 wget -qO- https://astral.sh/uv/install.sh | sh
 ```
 
-
 ## Useful commands
 
 ```shell
@@ -29,11 +28,9 @@ just
 just run
 ```
 
-
 ```shell
 uv add <package-name>
 ```
-
 
 ```shell
 backend --help
