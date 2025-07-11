@@ -1,0 +1,6 @@
+*
+!src
+!README.md
+!pyproject.toml
+!uv.lock
+!.git

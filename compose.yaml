@@ -1,0 +1,76 @@
+name: python_template
+
+services:
+
+
+
+  postgresql:
+    profiles:
+      - dev
+      - prod
+    container_name: postgresql
+    image: pgvector/pgvector:pg17
+    ports:
+      - 5432:5432
+    restart: always
+    environment:
+      - POSTGRES_DB=${POSTGRESQL_DATABASE:-example}
+      - POSTGRES_USER=${POSTGRESQL_USERNAME:-user}
+      - POSTGRES_PASSWORD=${POSTGRESQL_PASSWORD:-password}
+    volumes:
+      - postgresql_database_volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-q", "-d", "${POSTGRESQL_DATABASE:-example}", "-U", "${POSTGRESQL_USERNAME:-user}"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  nginx:
+    profiles:
+      - prod
+    container_name: nginx
+    image: nginx:stable
+    environment:
+      - BACKEND_HOST=backend
+      - BACKEND_PORT=${BACKEND_PORT:-8001}
+      - REWRITE_FROM=${ROOT_PATH:-/}
+    ports:
+      - "80:80"
+    volumes:
+      - ./resources/nginx/nginx.conf.template:/etc/nginx/templates/default.conf.template
+    depends_on:
+      - backend
+    restart: always
+
+  backend:
+    profiles:
+      - test
+      - prod
+    build:
+      dockerfile: Dockerfile
+
+    container_name: backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${BACKEND_PORT:-8001}/"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    environment:
+      - BACKEND__HOST__ADDRESS=0.0.0.0
+      - BACKEND__HOST__PORT=${BACKEND_PORT:-8001}
+      - BACKEND__POSTGRESQL__ADDRESS=postgresql
+      - BACKEND__POSTGRESQL__PORT=5432
+      - BACKEND__POSTGRESQL__DB_NAME=${POSTGRESQL_DATABASE:-example}
+      - BACKEND__POSTGRESQL__USERNAME=${POSTGRESQL_USERNAME:-user}
+      - BACKEND__POSTGRESQL__PASSWORD=${POSTGRESQL_PASSWORD:-password}
+      - ROOT_PATH=${ROOT_PATH:-/}
+      - WATCHFILES_FORCE_POLLING=true
+    ports:
+      - "${BACKEND_PORT:-8001}:${BACKEND_PORT:-8001}"
+    restart: always
+    depends_on:
+      postgresql:
+        condition: service_healthy
+
+volumes:
+  postgresql_database_volume:
